@@ -1,0 +1,19 @@
+# - name: Fetch instance
+#   google.cloud.gcp_compute_instance_info:
+#     auth_kind: serviceaccount
+#     service_account_file: "{{ credentials }}"
+#     project: "{{ project }}"
+#     zone: "{{ zone }}"
+#     filters:
+#       - name: "{{ instance_name }}"
+#   register: instance
+
+- name: Create instance
+  include_tasks: instance-up.yml
+  # When infrastructure_state ansible variable is "present", run this task
+  when: infrastructure_state == "present"
+
+- name: Delete instance
+  include_tasks: instance-down.yml
+  # When infrastructure_state ansible variable is "absent", run this task
+  when: infrastructure_state == "absent"

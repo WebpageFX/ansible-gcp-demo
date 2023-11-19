@@ -1,0 +1,41 @@
+# - name: Allocate an IP Address
+#   gcp_compute_address:
+#       name: 'test-address1'
+#       region: 'us-east4'
+#       project: "{{ ansible_env.GCP_PROJECT }}"
+#       auth_kind: "{{ ansible_env.GCP_AUTH_KIND }}"
+#       service_account_file: "{{ ansible_env.GCP_SERVICE_ACCOUNT_FILE }}"
+#       scopes:
+#         - https://www.googleapis.com/auth/compute
+#       state: "{{ infrastructure_state }}"
+
+- name: Delete compute instances
+  google.cloud.gcp_compute_instance:
+    name: "{{ item }}"
+    zone: "{{ zone }}"
+    project: "{{ ansible_env.GCP_PROJECT }}"
+    auth_kind: "{{ ansible_env.GCP_AUTH_KIND }}"
+    service_account_file: "{{ ansible_env.GCP_SERVICE_ACCOUNT_FILE }}"
+    state: "{{ infrastructure_state }}"
+
+- name: Delete disk
+  google.cloud.gcp_compute_disk:
+    name: "{{ item }}"
+    zone: "{{ zone }}"
+    # source_image: projects/ubuntu-os-cloud/global/images/family/ubuntu-1604-lts
+    project: "{{ ansible_env.GCP_PROJECT }}"
+    auth_kind: "{{ ansible_env.GCP_AUTH_KIND }}"
+    service_account_file: "{{ ansible_env.GCP_SERVICE_ACCOUNT_FILE }}"
+    state: "{{ infrastructure_state }}"
+  register: disk
+
+- name: Delete address
+  google.cloud.gcp_compute_address:
+    name: "{{ item }}"
+    region: "{{ region }}"
+    project: "{{ ansible_env.GCP_PROJECT }}"
+    auth_kind: "{{ ansible_env.GCP_AUTH_KIND }}"
+    service_account_file: "{{ ansible_env.GCP_SERVICE_ACCOUNT_FILE }}"
+    state: "{{ infrastructure_state }}"
+  register: address
+

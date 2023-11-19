@@ -1,0 +1,14 @@
+---
+plugin: gcp_compute
+projects:
+  - interactive-sandbox
+auth_kind: serviceaccount
+service_account_file: /home/ansible/gcp_service_account.json
+keyed_groups:
+  - key: labels
+    prefix: label
+  - key: zone
+    prefix: zone
+groups:
+  web: "'role' in (labels) and 'web' in (labels.role)"
+  dev: "'env' in (labels) and 'dev' in (labels.env)"

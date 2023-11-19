@@ -1,0 +1,6 @@
+services:
+    ansible:
+        command: sleep infinity
+        volumes:
+          - ./:/workspace
+          - ~/.ssh:/home/${SERVICE_ANSIBLE_USER}/.ssh

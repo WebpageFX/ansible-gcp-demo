@@ -1,0 +1,67 @@
+- name: Demo Ansible
+  connection: local
+  hosts: localhost
+  become: yes
+  vars:
+    ssh_user: ansible
+    ssh_key_path: /home/ansible/id_rsa
+    infrastructure_state: present
+    # scopes:
+    #   - https://www.googleapis.com/auth/compute
+    instances:
+      - instance-1
+      - instance-2
+    network_name: default
+    zone: us-central1-a
+    region: us-central1
+  tasks:
+    # This could be performed by a role which is OS agnostic
+    - name: Update apt
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+    - name: Ensure that pip is installed
+      package:
+        name: pip
+        state: present
+    - name: Ensure that requests and google-auth are installed via pip
+      pip:
+        name:
+          - requests
+          - google-auth
+        state: present
+    - name: Generate SSH key pair
+      openssh_keypair:
+        path: "{{ ssh_key_path }}"
+        type: rsa
+        size: 2048
+    - name: Create network
+      google.cloud.gcp_compute_network:
+        name: "{{ network_name }}"
+        auto_create_subnetworks: true
+        project: "{{ ansible_env.GCP_PROJECT }}"
+        auth_kind: "{{ ansible_env.GCP_AUTH_KIND }}"
+        service_account_file: "{{ ansible_env.GCP_SERVICE_ACCOUNT_FILE }}"
+        state: "{{ infrastructure_state }}"
+      when: network_name != "default" and infrastructure_state == "present"
+      register: network
+    - name: Create instances
+      include_tasks: instance-up.yml
+      # When infrastructure_state ansible variable is "present", run this task
+      loop: "{{ instances }}"
+      when: infrastructure_state == "present"
+    - name: Delete instances
+      include_tasks: instance-down.yml
+      # When infrastructure_state ansible variable is "absent", run this task
+      loop: "{{ instances }}"
+      when: infrastructure_state == "absent"
+    - name: Delete network
+      google.cloud.gcp_compute_network:
+        name: "{{ network_name }}"
+        project: "{{ ansible_env.GCP_PROJECT }}"
+        auth_kind: "{{ ansible_env.GCP_AUTH_KIND }}"
+        service_account_file: "{{ ansible_env.GCP_SERVICE_ACCOUNT_FILE }}"
+        state: "{{ infrastructure_state }}"
+      register: network
+      when: network_name != "default" and infrastructure_state == "absent"
+
