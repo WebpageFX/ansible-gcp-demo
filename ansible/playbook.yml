@@ -4,7 +4,7 @@
   become: yes
   vars:
     ssh_user: ansible
-    ssh_key_path: /home/ansible/id_rsa
+    ssh_key_path: /home/ansible/.ssh/id_rsa
     infrastructure_state: present
     # scopes:
     #   - https://www.googleapis.com/auth/compute
