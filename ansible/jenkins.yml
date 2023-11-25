@@ -3,14 +3,16 @@
   connection: ssh
   become: True
   vars:
+    jenkins_admin_username: admin
+    jenkins_admin_password: admin
     ansible_user: ansible
-    ansible_install_method: pip
+    # ansible_install_method: pip
     # firewall_allowed_tcp_ports:
     #   - "22"
     #   - "8080"
     jenkins_plugins:
       - ansicolor
-      # - ansible
+      - ansible
   roles:
     # - geerlingguy.pip
     # - geerlingguy.ansible
