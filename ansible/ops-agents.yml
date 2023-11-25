@@ -1,0 +1,20 @@
+# Installing the Monitoring and Logging agents
+# https://www.youtube.com/watch?v=GQgNygd-XJU&t=7s
+- hosts: all
+  become: true
+  roles:
+    - role: googlecloudplatform.google_cloud_ops_agents
+      vars:
+        agent_type: ops-agent
+    # - role: googlecloudplatform.google_cloud_ops_agents
+    #   vars:
+    #     agent_type: monitoring
+    # - role: googlecloudplatform.google_cloud_ops_agents
+    #   vars:
+    #     agent_type: logging
+  tasks:
+    - name: Ensure the ops-agent is running
+      service:
+        name: google-cloud-ops-agent
+        state: started
+        enabled: true
