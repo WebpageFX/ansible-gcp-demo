@@ -13,18 +13,25 @@
     network_name: default
     zone: us-central1-a
     region: us-central1
+    machine_type: e2-micro
+    boot_disk_size_gb: 30
+    label_env: dev
+    label_role: web
   tasks:
+
     # This could be performed by a role which is OS agnostic
     - name: Update apt
       apt:
         update_cache: yes
         cache_valid_time: 3600
       become: true
+
     - name: Ensure that pip is installed
       become: true
       package:
         name: pip
         state: present
+
     - name: Ensure that requests and google-auth are installed via pip
       pip:
         name:
@@ -32,6 +39,7 @@
           - google-auth
         state: present
       become: true
+
     - name: Generate SSH key pair
       openssh_keypair:
         path: "{{ ssh_key_path }}"
@@ -39,6 +47,7 @@
         comment: "ansible"
         size: 2048
       tags: ssh-keygen
+
     - name: Create network
       google.cloud.gcp_compute_network:
         name: "{{ network_name }}"
@@ -50,6 +59,7 @@
       when: network_name != "default" and infrastructure_state == "present"
       register: network
       tags: network
+
     - name: Fetch network
       google.cloud.gcp_compute_network_info:
         filters:
@@ -59,6 +69,7 @@
         service_account_file: "{{ ansible_env.GCP_SERVICE_ACCOUNT_FILE }}"
       register: networks
       tags: network
+
     - name: Set network
       set_fact:
         network: "{{ networks.resources[0] }}"
@@ -97,6 +108,7 @@
     #     priority: 65534
     #     source_ranges:
     #     -
+
     # https://stackoverflow.com/a/33533326
     - name: Allow SSH
       google.cloud.gcp_compute_firewall:
@@ -115,17 +127,20 @@
         service_account_file: "{{ ansible_env.GCP_SERVICE_ACCOUNT_FILE }}"
         state: "{{ infrastructure_state }}"
       tags: firewall
+
     - name: Create instances
       include_tasks: instance-up.yml
       # When infrastructure_state ansible variable is "present", run this task
       loop: "{{ instances }}"
       when: infrastructure_state == "present"
       tags: instances
+
     - name: Delete instances
       include_tasks: instance-down.yml
       # When infrastructure_state ansible variable is "absent", run this task
       loop: "{{ instances }}"
       when: infrastructure_state == "absent"
+
     - name: Delete network
       google.cloud.gcp_compute_network:
         name: "{{ network_name }}"
@@ -137,3 +152,19 @@
       when: network_name != "default" and infrastructure_state == "absent"
       tags: network
 
+- name: Manage new instances
+  hosts: new_instances
+  connection: ssh
+  become: True
+  # roles:
+  #   - base_configuration
+  #   - production_server
+  tasks:
+
+    - name: Ping
+      ping:
+      register: ping_result
+
+    - name: Print ping result
+      debug:
+        var: ping_result

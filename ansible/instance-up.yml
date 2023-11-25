@@ -1,7 +1,7 @@
 - name: Create disk
   google.cloud.gcp_compute_disk:
     name: "{{ item }}"
-    size_gb: 50
+    size_gb: "{{ boot_disk_size_gb }}"
     source_image: projects/ubuntu-os-pro-cloud/global/images/ubuntu-pro-2204-jammy-v20231117
     zone: "{{ zone }}"
     project: "{{ ansible_env.GCP_PROJECT }}"
@@ -29,7 +29,7 @@
 - name: Create compute instance
   google.cloud.gcp_compute_instance:
     name: "{{ item }}"
-    machine_type: e2-micro
+    machine_type: "{{ machine_type }}"
     zone: "{{ zone }}"
     disks:
       - auto_delete: 'true'
@@ -50,6 +50,26 @@
     service_account_file: "{{ ansible_env.GCP_SERVICE_ACCOUNT_FILE }}"
     state: "{{ infrastructure_state }}"
     labels:
-      env: dev
-      role: web
+      env: "{{ label_env  }}"
+      role: "{{ label_role  }}"
+  register: instance
 
+- name: Wait for SSH to come up
+  wait_for:
+    host: "{{ address.address }}"
+    port: 22
+    delay: 1
+    timeout: 60
+    # search_regex: "{{ ssh_user }}@{{ item }}"
+    # search_regex: "Last login"
+
+# https://stackoverflow.com/a/36292683
+- name: Test SSH connection
+  command: ssh -o StrictHostKeyChecking=no -i "{{ ssh_key_path }}" "{{ ssh_user }}@{{ address.address }}" exit
+  register: ssh_test
+  until: ssh_test.rc == 0
+  retries: 25
+  delay: 5
+
+- name: Add host to groupname
+  add_host: hostname={{ address.address }} groupname=new_instances
