@@ -5,15 +5,16 @@
     ssh_user: ansible
     ssh_key_path: /home/ansible/.ssh/id_rsa
     infrastructure_state: present
+    instance_status: RUNNING
     # scopes:
     #   - https://www.googleapis.com/auth/compute
     instances:
       - instance-1
       # - instance-2
-    network_name: default
+    network_name: instance-network
     zone: us-central1-a
     region: us-central1
-    machine_type: e2-micro
+    machine_type: e2-medium
     boot_disk_size_gb: 30
     label_env: dev
     label_role: web
@@ -48,7 +49,7 @@
         size: 2048
       tags: ssh-keygen
 
-    - name: Create network
+    - name: Manage network
       google.cloud.gcp_compute_network:
         name: "{{ network_name }}"
         auto_create_subnetworks: true
@@ -110,7 +111,7 @@
     #     -
 
     # https://stackoverflow.com/a/33533326
-    - name: Allow SSH
+    - name: Manage SSH port in firewall
       google.cloud.gcp_compute_firewall:
         name: "allow-ingresss-from-ssh-all"
         network: "{{ network }}"
@@ -122,6 +123,24 @@
           - 0.0.0.0/0
         direction: INGRESS
         description: Allow SSH traffic
+        project: "{{ ansible_env.GCP_PROJECT }}"
+        auth_kind: "{{ ansible_env.GCP_AUTH_KIND }}"
+        service_account_file: "{{ ansible_env.GCP_SERVICE_ACCOUNT_FILE }}"
+        state: "{{ infrastructure_state }}"
+      tags: firewall
+
+    - name: Manage port 8080 in firewall
+      google.cloud.gcp_compute_firewall:
+        name: "allow-ingresss-from-tcp-8080"
+        network: "{{ network }}"
+        allowed:
+        - ip_protocol: tcp
+          ports:
+          - 8080
+        source_ranges:
+          - 0.0.0.0/0
+        direction: INGRESS
+        description: Allow TCP traffic on port 8080
         project: "{{ ansible_env.GCP_PROJECT }}"
         auth_kind: "{{ ansible_env.GCP_AUTH_KIND }}"
         service_account_file: "{{ ansible_env.GCP_SERVICE_ACCOUNT_FILE }}"
@@ -152,19 +171,17 @@
       when: network_name != "default" and infrastructure_state == "absent"
       tags: network
 
-- name: Manage new instances
-  hosts: new_instances
-  connection: ssh
-  become: True
-  # roles:
-  #   - base_configuration
-  #   - production_server
-  tasks:
 
-    - name: Ping
-      ping:
-      register: ping_result
+# - name: Manage new instances
+#   hosts: new_instances
+#   connection: ssh
+#   become: True
+#   tasks:
+#     - name: Ping
+#       ping:
+#       register: ping_result
 
-    - name: Print ping result
-      debug:
-        var: ping_result
+#     - name: Print ping result
+#       debug:
+#         var: ping_result
+

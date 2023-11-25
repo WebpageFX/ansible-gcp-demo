@@ -49,6 +49,7 @@
     auth_kind: "{{ ansible_env.GCP_AUTH_KIND }}"
     service_account_file: "{{ ansible_env.GCP_SERVICE_ACCOUNT_FILE }}"
     state: "{{ infrastructure_state }}"
+    status: "{{ instance_status }}"
     labels:
       env: "{{ label_env  }}"
       role: "{{ label_role  }}"
@@ -62,14 +63,16 @@
     timeout: 60
     # search_regex: "{{ ssh_user }}@{{ item }}"
     # search_regex: "Last login"
+  when: instance_status != 'TERMINATED'
 
 # https://stackoverflow.com/a/36292683
-- name: Test SSH connection
+- name: Wait for SSH connection
   command: ssh -o StrictHostKeyChecking=no -i "{{ ssh_key_path }}" "{{ ssh_user }}@{{ address.address }}" exit
   register: ssh_test
   until: ssh_test.rc == 0
   retries: 25
   delay: 5
+  when: instance_status != 'TERMINATED'
 
 - name: Add host to groupname
   add_host: hostname={{ address.address }} groupname=new_instances
