@@ -1,0 +1,43 @@
+- name: Install Jenkins
+  hosts: web
+  connection: ssh
+  become: True
+  vars:
+    ansible_user: ansible
+    ansible_install_method: pip
+    # firewall_allowed_tcp_ports:
+    #   - "22"
+    #   - "8080"
+    jenkins_plugins:
+      - ansicolor
+      # - ansible
+  roles:
+    # - geerlingguy.pip
+    # - geerlingguy.ansible
+    - geerlingguy.java
+    - geerlingguy.jenkins
+  pre_tasks:
+    - name: Update apt
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      become: true
+
+    - name: Ensure that pip is installed
+      become: true
+      package:
+        name: pip
+        state: present
+
+    - name: Install ansible
+      pip:
+        name: ansible
+        state: present
+
+  tasks:
+    - name: Ping
+      ping:
+      register: ping_result
+    - name: Print ping result
+      debug:
+        var: ping_result
