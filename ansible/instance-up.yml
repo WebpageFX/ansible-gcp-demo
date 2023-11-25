@@ -21,6 +21,11 @@
     state: "{{ infrastructure_state }}"
   register: address
 
+- name: Slurp SSH key
+  slurp:
+    src: "{{ ssh_key_path }}.pub"
+  register: ssh_key
+
 - name: Create compute instance
   google.cloud.gcp_compute_instance:
     name: "{{ item }}"
@@ -38,7 +43,7 @@
         type: ONE_TO_ONE_NAT
         network_tier: "STANDARD"
     metadata:
-      ssh-keys: "{{ ssh_user }}:{{ lookup('file', '/home/ansible/.ssh/id_rsa.pub') }} {{ ssh_user }}"
+      ssh-keys: "{{ ssh_user }}:{{ ssh_key.content | b64decode | string }}"
       enable-oslogin: 'false'
     project: "{{ ansible_env.GCP_PROJECT }}"
     auth_kind: "{{ ansible_env.GCP_AUTH_KIND }}"
@@ -47,3 +52,4 @@
     labels:
       env: dev
       role: web
+

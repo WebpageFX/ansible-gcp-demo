@@ -1,7 +1,6 @@
 - name: Demo Ansible
   connection: local
   hosts: localhost
-  become: yes
   vars:
     ssh_user: ansible
     ssh_key_path: /home/ansible/.ssh/id_rsa
@@ -20,7 +19,9 @@
       apt:
         update_cache: yes
         cache_valid_time: 3600
+      become: true
     - name: Ensure that pip is installed
+      become: true
       package:
         name: pip
         state: present
@@ -30,11 +31,14 @@
           - requests
           - google-auth
         state: present
+      become: true
     - name: Generate SSH key pair
       openssh_keypair:
         path: "{{ ssh_key_path }}"
         type: rsa
+        comment: "ansible"
         size: 2048
+      tags: ssh-keygen
     - name: Create network
       google.cloud.gcp_compute_network:
         name: "{{ network_name }}"
