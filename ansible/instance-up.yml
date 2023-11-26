@@ -2,7 +2,7 @@
   google.cloud.gcp_compute_disk:
     name: "{{ item }}"
     size_gb: "{{ boot_disk_size_gb }}"
-    source_image: projects/ubuntu-os-pro-cloud/global/images/ubuntu-pro-2204-jammy-v20231117
+    source_image: "{{ instance_source_image }}"
     zone: "{{ zone }}"
     project: "{{ ansible_env.GCP_PROJECT }}"
     auth_kind: "{{ ansible_env.GCP_AUTH_KIND }}"
