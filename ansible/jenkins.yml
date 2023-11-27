@@ -4,18 +4,18 @@
   become: True
   vars:
     jenkins_admin_username: admin
-    jenkins_admin_password: admin
+    jenkins_admin_password: !vault |
+              $ANSIBLE_VAULT;1.1;AES256
+              63323931366533343436343064303064373364333961386638326466646263393131333436373562
+              6130336431656138326561636565646264346638666265370a633138383431636165393962636262
+              32633233346366356231346230303736393035346330616162633638666336643336663866393331
+              3435643662656131330a623363396435396237303839633337346135633036653466626364626231
+              62326465303937653961313334376566386139396266303533643865656261646362
     ansible_user: ansible
-    # ansible_install_method: pip
-    # firewall_allowed_tcp_ports:
-    #   - "22"
-    #   - "8080"
     jenkins_plugins:
       - ansicolor
       - ansible
   roles:
-    # - geerlingguy.pip
-    # - geerlingguy.ansible
     - geerlingguy.java
     - geerlingguy.jenkins
   pre_tasks:
