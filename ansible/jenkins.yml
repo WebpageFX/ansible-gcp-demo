@@ -3,18 +3,39 @@
   connection: ssh
   become: True
   vars:
+    infrastructure_state: present
     jenkins_admin_username: admin
     jenkins_admin_password: !vault |
               $ANSIBLE_VAULT;1.1;AES256
-              63323931366533343436343064303064373364333961386638326466646263393131333436373562
-              6130336431656138326561636565646264346638666265370a633138383431636165393962636262
-              32633233346366356231346230303736393035346330616162633638666336643336663866393331
-              3435643662656131330a623363396435396237303839633337346135633036653466626364626231
-              62326465303937653961313334376566386139396266303533643865656261646362
+              38613035316634313230353066643866306434646635666537336262353363393330346561643666
+              3237326163343166383338353637363339643731613835330a363166643836363164353566363934
+              62376539633133303333346231396663306161316261663335633333656536396436316137376132
+              3235323137363538340a333633353530653264366230313534366638303962646132363835636634
+              65313039333836633331653136626263316236353133393939343033313932353631
     ansible_user: ansible
+    # https://github.com/jenkinsci/jenkins/blob/6ca9b5ee5f601f72fcd094f8d159272c6b504b2f/core/src/main/resources/jenkins/install/platform-plugins.json
     jenkins_plugins:
-      - ansicolor
       - ansible
+      - ansicolor
+      - ant
+      - antisamy-markup-formatter
+      - build-timeout
+      - cloudbees-folder
+      - credentials-binding
+      - email-ext
+      - git
+      - github-branch-source
+      - gradle
+      - ldap
+      - mailer
+      - matrix-auth
+      - pam-auth
+      - pipeline-github-lib
+      - pipeline-stage-view
+      - ssh-slaves
+      - timestamper
+      - workflow-aggregator
+      - ws-cleanup
   roles:
     - geerlingguy.java
     - geerlingguy.jenkins
@@ -36,7 +57,25 @@
         name: ansible
         state: present
 
+    - name: Stop jenkins
+      service:
+        name: jenkins
+        state: stopped
+      become: true
+      when: infrastructure_state == 'absent'
+
+    - name: Uninstall jenkins
+      apt:
+        name: jenkins
+        state: absent
+      become: true
+      when: infrastructure_state == 'absent'
+
   tasks:
+    - name: Debug jenkins_admin_password
+      debug:
+        var: jenkins_admin_password
+      tags: debug
     - name: Ping
       ping:
       register: ping_result
