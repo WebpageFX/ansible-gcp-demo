@@ -154,9 +154,18 @@
         name: ansible
         state: present
 
-  tasks:
-      # https://github.com/jenkinsci/configuration-as-code-plugin
+    # https://github.com/jenkinsci/configuration-as-code-plugin
     - name: Template jenkins.j2 to {{ jenkins_home }}/jenkins.yaml
       template:
         src: jenkins.j2
         dest: "{{ jenkins_home }}/jenkins.yaml"
+
+
+  # tasks:
+  #     # https://github.com/jenkinsci/configuration-as-code-plugin
+  #   # - name: Template jenkins.j2 to {{ jenkins_home }}/jenkins.yaml
+  #   #   template:
+  #   #     src: jenkins.j2
+  #   #     dest: "{{ jenkins_home }}/jenkins.yaml"
+  #   - ansible.builtin.ping:
+

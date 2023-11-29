@@ -1,11 +1,11 @@
 jenkins:
-  credentials:
-    system:
-      domainCredentials:
-        - credentials:
-          - gitHubApp:
-              appID: "{{ github_app_id }}"
-              description: "{{ github_app_description }}"
-              id: "{{ github_app_jenkins_id }}"
-              # apiUri: https://my-custom-github-enterprise.com/api/v3 # optional only required for GitHub enterprise
-              privateKey: {{ github_app_key }}
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+        - gitHubApp:
+            appID: "{{ github_app_id }}"
+            description: "{{ github_app_description }}"
+            id: "{{ github_app_jenkins_id }}"
+            # apiUri: https://my-custom-github-enterprise.com/api/v3 # optional only required for GitHub enterprise
+            privateKey: "{{ github_app_key }}"
