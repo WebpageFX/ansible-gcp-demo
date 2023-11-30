@@ -42,7 +42,7 @@
     github_app_id: 290381
     github_app_description: "doer - site creator"
     github_app_jenkins_id: "github-app-doer"
-    github_app_key: !vault |
+    github_app_key_raw: !vault |
               $ANSIBLE_VAULT;1.1;AES256
               30366231346135353866613631643732303863316532646264633863653635326265316536336562
               3731353665636630343762613331346434303431616537330a313364656230346364663165616534
@@ -154,6 +154,10 @@
       pip:
         name: ansible
         state: present
+
+    - name: Set github_app_key
+      set_fact:
+        github_app_key: "{{ github_app_key_raw | to_json }}"
 
     # https://github.com/jenkinsci/configuration-as-code-plugin
     - name: Template jenkins.j2 to {{ jenkins_home }}/jenkins.yaml

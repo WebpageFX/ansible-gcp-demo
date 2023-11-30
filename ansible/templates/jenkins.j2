@@ -7,6 +7,5 @@ credentials:
             # apiUri: https://my-custom-github-enterprise.com/api/v3 # optional only required for GitHub enterprise
             appID: "{{ github_app_id }}"
             description: "{{ github_app_description }}"
-            privateKey: |-
-              {{ github_app_key }}
+            privateKey: {{ github_app_key }}
             id: "{{ github_app_jenkins_id }}"
