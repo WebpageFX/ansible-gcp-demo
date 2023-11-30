@@ -155,6 +155,7 @@
         name: ansible
         state: present
 
+    # https://stackoverflow.com/questions/67494516/with-ansible-how-do-i-write-a-private-key-to-a-text-file-without-losing-the-lef
     - name: Set github_app_key
       set_fact:
         github_app_key: "{{ github_app_key_raw | to_json }}"

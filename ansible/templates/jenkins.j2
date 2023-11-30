@@ -7,5 +7,6 @@ credentials:
             # apiUri: https://my-custom-github-enterprise.com/api/v3 # optional only required for GitHub enterprise
             appID: "{{ github_app_id }}"
             description: "{{ github_app_description }}"
+            # https://stackoverflow.com/questions/67494516/with-ansible-how-do-i-write-a-private-key-to-a-text-file-without-losing-the-lef
             privateKey: {{ github_app_key }}
             id: "{{ github_app_jenkins_id }}"
