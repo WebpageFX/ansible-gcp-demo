@@ -137,6 +137,10 @@
     - geerlingguy.java
     - geerlingguy.jenkins
   pre_tasks:
+    - name: Debug key
+      debug:
+        var: github_app_key
+      tags: debug-key
     - name: Update apt
       apt:
         update_cache: yes
