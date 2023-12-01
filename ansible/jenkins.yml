@@ -3,6 +3,8 @@
   connection: ssh
   become: True
   vars:
+    # This variable drives which user Ansible will use to connect to the target hosts
+    ansible_user: ansible
     infrastructure_state: present
     jenkins_home: /var/lib/jenkins
     jenkins_admin_username: admin
@@ -14,7 +16,7 @@
               6139336236353734660a326665666265623161616333353365393137633262373831313235636136
               35306266633030336532343764616261363039353936363030656261633064363637363639653431
               3739363131616436653230623163383966336331666262643262
-    ansible_user: ansible
+    jenkins_process_user: jenkins
     # https://github.com/jenkinsci/jenkins/blob/6ca9b5ee5f601f72fcd094f8d159272c6b504b2f/core/src/main/resources/jenkins/install/platform-plugins.json
     jenkins_plugins:
       - ansible
@@ -25,6 +27,8 @@
       - cloudbees-folder
       - configuration-as-code
       - credentials-binding
+      - docker-plugin
+      - docker-workflow
       - email-ext
       - git
       - github-branch-source
@@ -39,6 +43,8 @@
       - timestamper
       - workflow-aggregator
       - ws-cleanup
+    docker_users:
+      - jenkins
     github_app_id: 290381
     github_app_description: "doer - site creator"
     github_app_jenkins_id: "github-app-doer"
@@ -136,6 +142,7 @@
   roles:
     - geerlingguy.java
     - geerlingguy.jenkins
+    - geerlingguy.docker
   pre_tasks:
 
     - name: Update apt
