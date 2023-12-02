@@ -184,10 +184,34 @@
       notify:
         - Restart Jenkins
 
-handlers:
-  - name: Restart Jenkins
-    become: true
-    service:
-      name: jenkins
-      state: restarted
+  tasks:
+    - name: Create a folder to store SSH keys
+      become: true
+      file:
+        path: "/home/{{ jenkins_process_user }}/.ssh"
+        state: directory
+        mode: 0700
+        owner: "{{ jenkins_process_user }}"
+        group: "{{ jenkins_process_user }}"
+
+    - name: Copy and decrypt SSH key files
+      become: true
+      copy:
+        src: "{{ item }}"
+        dest: "/home/{{ jenkins_process_user }}/.ssh/{{ item }}"
+        mode: 0600
+        owner: "{{ jenkins_process_user }}"
+        group: "{{ jenkins_process_user }}"
+      with_items:
+        - beanstalk.pem
+        - github_app.pem
+        - github.pem
+        - previously_authorized.pem
+
+  handlers:
+    - name: Restart Jenkins
+      become: true
+      service:
+        name: jenkins
+        state: restarted
 
