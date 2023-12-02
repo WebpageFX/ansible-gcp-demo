@@ -139,6 +139,15 @@
               62643565626465323538613364363734303062366237303962336164386565613765323465333431
               32646236373266323261313337636139383264333037326264326433316561393335373062303865
               32653631313163386438333965616465356166663961666263653934353261346330
+    github_packages_username: AndrewJDawes
+    github_packages_classic_token: !vault |
+              $ANSIBLE_VAULT;1.1;AES256
+              33373862353761303762646634663665363137393838383932323165316462626164343736333930
+              6137663263616235616633636235623966353330653537380a663264303436386230626261383531
+              64313263336161326135353230363433656264623733366562623038326335643532316330653661
+              6362356662393264390a373362356531363263303132343031636562386262336461613762666538
+              34616636376436326664313433343662643233666665396561343931633335386534376637663132
+              6235343463333036366665356461616230613364356136316535
   roles:
     - geerlingguy.java
     - geerlingguy.jenkins
@@ -172,13 +181,13 @@
       template:
         src: jenkins.j2
         dest: "{{ jenkins_home }}/jenkins.yaml"
+      notify:
+        - Restart Jenkins
 
-
-  # tasks:
-  #     # https://github.com/jenkinsci/configuration-as-code-plugin
-  #   # - name: Template jenkins.j2 to {{ jenkins_home }}/jenkins.yaml
-  #   #   template:
-  #   #     src: jenkins.j2
-  #   #     dest: "{{ jenkins_home }}/jenkins.yaml"
-  #   - ansible.builtin.ping:
+handlers:
+  - name: Restart Jenkins
+    become: true
+    service:
+      name: jenkins
+      state: restarted
 

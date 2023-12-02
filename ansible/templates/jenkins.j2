@@ -10,3 +10,8 @@ credentials:
             # https://stackoverflow.com/questions/67494516/with-ansible-how-do-i-write-a-private-key-to-a-text-file-without-losing-the-lef
             privateKey: {{ github_app_key }}
             id: "{{ github_app_jenkins_id }}"
+        - usernamePassword:
+            scope: GLOBAL
+            id: "github-packages-classic-token"
+            username: "{{ github_packages_username }}"
+            password: "{{ github_packages_classic_token }}"
