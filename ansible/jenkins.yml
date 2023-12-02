@@ -185,20 +185,20 @@
         - Restart Jenkins
 
   tasks:
-    - name: Create a folder to store SSH keys
+    - name: Create a folder to store keys and env file
       become: true
       file:
-        path: "/home/{{ jenkins_process_user }}/.ssh"
+        path: "/home/{{ jenkins_process_user }}/beanstalk_to_github_migration"
         state: directory
         mode: 0700
         owner: "{{ jenkins_process_user }}"
         group: "{{ jenkins_process_user }}"
 
-    - name: Copy and decrypt SSH key files
+    - name: Copy and decrypt keys and env files
       become: true
       copy:
-        src: "{{ item }}"
-        dest: "/home/{{ jenkins_process_user }}/.ssh/{{ item }}"
+        src: "beanstalk_to_github_migration/{{ item }}"
+        dest: "/home/{{ jenkins_process_user }}/beanstalk_to_github_migration/{{ item }}"
         mode: 0600
         owner: "{{ jenkins_process_user }}"
         group: "{{ jenkins_process_user }}"
@@ -207,6 +207,7 @@
         - github_app.pem
         - github.pem
         - previously_authorized.pem
+        - .env
 
   handlers:
     - name: Restart Jenkins
