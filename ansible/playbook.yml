@@ -76,40 +76,6 @@
       set_fact:
         network: "{{ networks.resources[0] }}"
       tags: network
-    # - name: Add firewall rule default-allow-internal
-    #   google.cloud.gcp_compute_firewall:
-    #     name: default-allow-internal
-    #     network: "{{ network }}"
-    #     allowed:
-    #     - ip_protocol: icmp
-    #     - ip_protocol: tcp
-    #       ports:
-    #       - 0-65535
-    #     - ip_protocol: udp
-    #       ports:
-    #       - 0-65535
-    #     direction: INGRESS
-    #     priority: 65534
-    #     source_ranges:
-    #     - 35.235.240.0/20
-    #     state: "{{ infrastructure_state }}"
-    #   tags: firewall
-    #   when: network_name != "default"
-    # - name: Add IAP firewall rule
-    #   google.cloud.gcp_compute_firewall:
-    #     name: default-allow-iap
-    #     network: "{{ network }}"
-    #     allowed:
-    #     - ip_protocol: tcp
-    #       ports:
-    #       - 22
-    #     - ip_protocol: tcp
-    #       ports:
-    #       - 3389
-    #     direction: INGRESS
-    #     priority: 65534
-    #     source_ranges:
-    #     -
 
     # https://stackoverflow.com/a/33533326
     - name: Manage SSH port in firewall
@@ -142,6 +108,61 @@
           - 0.0.0.0/0
         direction: INGRESS
         description: Allow TCP traffic on port 8080
+        project: "{{ ansible_env.GCP_PROJECT }}"
+        auth_kind: "{{ ansible_env.GCP_AUTH_KIND }}"
+        service_account_file: "{{ ansible_env.GCP_SERVICE_ACCOUNT_FILE }}"
+        state: absent
+      tags: firewall
+
+    - name: Manage port 8443 in firewall
+      google.cloud.gcp_compute_firewall:
+        name: "allow-ingresss-from-tcp-8443"
+        network: "{{ network }}"
+        allowed:
+        - ip_protocol: tcp
+          ports:
+          - 8443
+        source_ranges:
+          - 0.0.0.0/0
+        direction: INGRESS
+        description: Allow TCP traffic on port 8443
+        project: "{{ ansible_env.GCP_PROJECT }}"
+        auth_kind: "{{ ansible_env.GCP_AUTH_KIND }}"
+        service_account_file: "{{ ansible_env.GCP_SERVICE_ACCOUNT_FILE }}"
+        state: absent
+      tags: firewall
+
+
+    - name: Manage port 80 in firewall
+      google.cloud.gcp_compute_firewall:
+        name: "allow-ingresss-from-tcp-80"
+        network: "{{ network }}"
+        allowed:
+        - ip_protocol: tcp
+          ports:
+          - 80
+        source_ranges:
+          - 0.0.0.0/0
+        direction: INGRESS
+        description: Allow TCP traffic on port 80
+        project: "{{ ansible_env.GCP_PROJECT }}"
+        auth_kind: "{{ ansible_env.GCP_AUTH_KIND }}"
+        service_account_file: "{{ ansible_env.GCP_SERVICE_ACCOUNT_FILE }}"
+        state: "{{ infrastructure_state }}"
+      tags: firewall
+
+    - name: Manage port 443 in firewall
+      google.cloud.gcp_compute_firewall:
+        name: "allow-ingresss-from-tcp-443"
+        network: "{{ network }}"
+        allowed:
+        - ip_protocol: tcp
+          ports:
+          - 443
+        source_ranges:
+          - 0.0.0.0/0
+        direction: INGRESS
+        description: Allow TCP traffic on port 443
         project: "{{ ansible_env.GCP_PROJECT }}"
         auth_kind: "{{ ansible_env.GCP_AUTH_KIND }}"
         service_account_file: "{{ ansible_env.GCP_SERVICE_ACCOUNT_FILE }}"
