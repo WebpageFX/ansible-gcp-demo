@@ -13,10 +13,6 @@
     nginx_ppa_version: stable
     # This variable drives which user Ansible will use to connect to the target hosts
     jenkins_domain_name: jenkins.webfxinteractive.com
-    jenkins_ssl_directory: /etc/ssl/private
-    jenkins_ssl_csr_path: /etc/ssl/private/{{ jenkins_domain_name }}.csr
-    jenkins_ssl_certificate_path: /etc/ssl/private/{{ jenkins_domain_name }}-fullchain.pem
-    jenkins_ssl_privkey_path: /etc/ssl/private/{{ jenkins_domain_name }}-privkey.pem
     jenkins_http_port: 8080
     jenkins_https_port: 8443
     infrastructure_state: present
@@ -248,18 +244,6 @@
         owner: "{{ nginx_user }}"
         group: "{{ nginx_user }}"
 
-    - name: Create letsencrypt certificate
-      shell: "{{ certbot_executable }} certonly -n --webroot -w {{ certbot_webdoc_root }} -m {{ certbot_email }} --agree-tos -d {{ jenkins_domain_name }}"
-      args:
-        creates: /etc/letsencrypt/live/{{ domain_name }}
-      notify: Restart Nginx
-
-    - name: Add letsencrypt cronjob for cert renewal
-      cron:
-        name: letsencrypt_renewal
-        special_time: weekly
-        job: "{{ certbot_executable }} --renew certonly -n --webroot -w {{ certbot_webdoc_root }} -m {{ certbot_email }} --agree-tos -d {{ jenkins_domain_name }} && service nginx reload"
-
 
     # - name: Ensure directory exists for local self-signed TLS certs.
     #   file:
@@ -268,42 +252,125 @@
     #     owner: "{{ nginx_user }}"
     #     group: "{{ nginx_user }}"
 
-    # - name: Generate an OpenSSL private key.
-    #   openssl_privatekey:
-    #     path: "{{ jenkins_ssl_privkey_path }}"
-    #     owner: "{{ nginx_user }}"
-    #     group: "{{ nginx_user }}"
+    - name: Ensure directory exists for local self-signed TLS certs
+      become: true
+      file:
+        path: "/etc/letsencrypt/live/{{ jenkins_domain_name }}"
+        state: directory
+        mode: 0700
+        # owner: "{{ nginx_user }}"
+        # group: "{{ nginx_user }}"
 
-    # - name: Generate an OpenSSL CSR.
-    #   openssl_csr:
-    #     path: "{{ jenkins_ssl_csr_path }}"
-    #     privatekey_path: "{{ jenkins_ssl_privkey_path }}"
-    #     common_name: "{{ jenkins_domain_name }}"
-    #     owner: "{{ nginx_user }}"
-    #     group: "{{ nginx_user }}"
+    - name: Check if /etc/letsencrypt/live/{{ jenkins_domain_name }}/privkey.pem exists
+      stat:
+        path: "/etc/letsencrypt/live/{{ jenkins_domain_name }}/privkey.pem"
+      register: jenkins_ssl_privkey_path_stat
 
-    # - name: Generate a Self Signed OpenSSL certificate.
-    #   openssl_certificate:
-    #     path: "{{ jenkins_ssl_certificate_path }}"
-    #     privatekey_path: "{{ jenkins_ssl_privkey_path }}"
-    #     csr_path: "{{ jenkins_ssl_csr_path }}"
-    #     provider: selfsigned
-    #     owner: "{{ nginx_user }}"
-    #     group: "{{ nginx_user }}"
+    - name: Check if /etc/letsencrypt/live/{{ jenkins_domain_name }}/fullchain.pem exists
+      stat:
+        path: "/etc/letsencrypt/live/{{ jenkins_domain_name }}/fullchain.pem"
+      register: jenkins_ssl_certificate_path_stat
 
-    - name: Template nginx/jenkins.conf.j2 to /etc/nginx/sites-enabled/
+    - name: Touch a flag file if either key does not exists
+      become: true
+      file:
+        path: /etc/letsencrypt/live/{{ jenkins_domain_name }}/self-signed.flag
+        state: touch
+        # owner: "{{ nginx_user }}"
+        # group: "{{ nginx_user }}"
+      when: jenkins_ssl_privkey_path_stat.stat.exists == False or jenkins_ssl_certificate_path_stat.stat.exists == False
+
+    - name: Stat the flag file
+      stat:
+        path: /etc/letsencrypt/live/{{ jenkins_domain_name }}/self-signed.flag
+      register: jenkins_ssl_self_signed_flag
+
+    - name: Generate an OpenSSL private key
+      openssl_privatekey:
+        path: "/etc/letsencrypt/live/{{ jenkins_domain_name }}/privkey.pem"
+        # owner: "{{ nginx_user }}"
+        # group: "{{ nginx_user }}"
+      when: jenkins_ssl_privkey_path_stat.stat.exists == False or jenkins_ssl_certificate_path_stat.stat.exists == False
+
+    - name: Generate an OpenSSL CSR.
+      openssl_csr:
+        path: "/etc/letsencrypt/live/{{ jenkins_domain_name }}/csr.csr"
+        privatekey_path: "/etc/letsencrypt/live/{{ jenkins_domain_name }}/privkey.pem"
+        common_name: "{{ jenkins_domain_name }}"
+        # owner: "{{ nginx_user }}"
+        # group: "{{ nginx_user }}"
+      when: jenkins_ssl_privkey_path_stat.stat.exists == False or jenkins_ssl_certificate_path_stat.stat.exists == False
+
+    - name: Generate a Self Signed OpenSSL certificate.
+      openssl_certificate:
+        path: "/etc/letsencrypt/live/{{ jenkins_domain_name }}/fullchain.pem"
+        privatekey_path: "/etc/letsencrypt/live/{{ jenkins_domain_name }}/privkey.pem"
+        csr_path: "/etc/letsencrypt/live/{{ jenkins_domain_name }}/csr.csr"
+        provider: selfsigned
+        # owner: "{{ nginx_user }}"
+        # group: "{{ nginx_user }}"
+      when: jenkins_ssl_privkey_path_stat.stat.exists == False or jenkins_ssl_certificate_path_stat.stat.exists == False
+
+    - name: Template nginx/jenkins.conf.j2 to /etc/nginx/sites-available/
       template:
         src: nginx/jenkins.conf.j2
-        dest: /etc/nginx/sites-enabled/jenkins.conf
+        dest: /etc/nginx/sites-available/jenkins.conf
+      register: template_nginx_jenkins_conf
       notify:
-        - Restart Nginx
+        - Reload Nginx
+
+    - name: Create a symlink to enable the jenkins.conf
+      file:
+        src: /etc/nginx/sites-available/jenkins.conf
+        dest: /etc/nginx/sites-enabled/jenkins.conf
+        state: link
+        force: yes
+      register: symlink_nginx_jenkins_conf
+      notify:
+        - Reload Nginx
+
+    - name: Immediately reload nginx if necessary
+      become: true
+      service:
+        name: nginx
+        state: reloaded
+      when: template_nginx_jenkins_conf.changed or jenkins_ssl_privkey_path_stat.stat.exists == False or jenkins_ssl_certificate_path_stat.stat.exists == False
+
+    - name: Remove self-signed so we can replace with letsencrypt if necessary
+      become: true
+      file:
+        path: "/etc/letsencrypt/live/{{ jenkins_domain_name }}"
+        state: absent
+        force: yes
+      when: jenkins_ssl_self_signed_flag.stat.exists == True
+
+    - name: Generate letsencrypt certificate
+      shell: "{{ certbot_executable }} certonly -n --webroot -w {{ certbot_webdoc_root }} -m {{ certbot_email }} --agree-tos -d {{ jenkins_domain_name }}"
+      args:
+        creates: "/etc/letsencrypt/live/{{ jenkins_domain_name }}"
+      notify: Reload Nginx
+
+    - name: Add letsencrypt cronjob for cert renewal
+      cron:
+        name: letsencrypt_renewal
+        special_time: weekly
+        job: "{{ certbot_executable }} --renew certonly -n --webroot -w {{ certbot_webdoc_root }} -m {{ certbot_email }} --agree-tos -d {{ jenkins_domain_name }} && service nginx reload"
+
 
   handlers:
+
     - name: Restart Jenkins
       become: true
       service:
         name: jenkins
         state: restarted
+
+    - name: Reload Nginx
+      become: true
+      service:
+        name: nginx
+        state: reloaded
+
     - name: Restart Nginx
       become: true
       service:
