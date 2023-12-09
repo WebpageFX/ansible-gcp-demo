@@ -4,12 +4,6 @@ services:
         build:
             context: ./dockerfiles/ansible
             dockerfile: Dockerfile
-            args:
-              USER_NAME: ${SERVICE_ANSIBLE_USER}
-              USER_UID: ${SERVICE_ANSIBLE_UID}
-              GROUP_NAME: ${SERVICE_ANSIBLE_GROUP}
-              GROUP_GID: ${SERVICE_ANSIBLE_GID}
-              USER_PASSWORD: ${SERVICE_ANSIBLE_PASSWORD}
         environment:
             - GCP_PROJECT=${GCP_PROJECT}
             - GCP_AUTH_KIND=${GCP_AUTH_KIND}

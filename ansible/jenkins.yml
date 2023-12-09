@@ -4,6 +4,9 @@
   become: True
   vars:
     ansible_user: ansible
+    certbot_executable: certbot
+    certbot_webdoc_root: /var/www/html
+    certbot_email: andrew+jenkinswebfxinteractive@webfx.com
     nginx_user: www-data
     nginx_vhosts: []
     nginx_remove_default_vhost: True
@@ -194,6 +197,12 @@
         name: pyOpenSSL
         state: present
 
+    - name: Intall letsenrypt
+      become: true
+      apt:
+        name: python3-certbot-nginx
+        state: present
+
     # https://stackoverflow.com/questions/67494516/with-ansible-how-do-i-write-a-private-key-to-a-text-file-without-losing-the-lef
     - name: Set github_app_key
       set_fact:
@@ -232,35 +241,55 @@
         - previously_authorized.pem
         - .env
 
-    - name: Ensure directory exists for local self-signed TLS certs.
+    - name: Ensure certbot_webdoc_root directory exists
       file:
-        path: "{{ jenkins_ssl_directory }}"
+        path: "{{ certbot_webdoc_root }}"
         state: directory
         owner: "{{ nginx_user }}"
         group: "{{ nginx_user }}"
 
-    - name: Generate an OpenSSL private key.
-      openssl_privatekey:
-        path: "{{ jenkins_ssl_privkey_path }}"
-        owner: "{{ nginx_user }}"
-        group: "{{ nginx_user }}"
+    - name: Create letsencrypt certificate
+      shell: "{{ certbot_executable }} certonly -n --webroot -w {{ certbot_webdoc_root }} -m {{ certbot_email }} --agree-tos -d {{ jenkins_domain_name }}"
+      args:
+        creates: /etc/letsencrypt/live/{{ domain_name }}
+      notify: Restart Nginx
 
-    - name: Generate an OpenSSL CSR.
-      openssl_csr:
-        path: "{{ jenkins_ssl_csr_path }}"
-        privatekey_path: "{{ jenkins_ssl_privkey_path }}"
-        common_name: "{{ jenkins_domain_name }}"
-        owner: "{{ nginx_user }}"
-        group: "{{ nginx_user }}"
+    - name: Add letsencrypt cronjob for cert renewal
+      cron:
+        name: letsencrypt_renewal
+        special_time: weekly
+        job: "{{ certbot_executable }} --renew certonly -n --webroot -w {{ certbot_webdoc_root }} -m {{ certbot_email }} --agree-tos -d {{ jenkins_domain_name }} && service nginx reload"
 
-    - name: Generate a Self Signed OpenSSL certificate.
-      openssl_certificate:
-        path: "{{ jenkins_ssl_certificate_path }}"
-        privatekey_path: "{{ jenkins_ssl_privkey_path }}"
-        csr_path: "{{ jenkins_ssl_csr_path }}"
-        provider: selfsigned
-        owner: "{{ nginx_user }}"
-        group: "{{ nginx_user }}"
+
+    # - name: Ensure directory exists for local self-signed TLS certs.
+    #   file:
+    #     path: "{{ jenkins_ssl_directory }}"
+    #     state: directory
+    #     owner: "{{ nginx_user }}"
+    #     group: "{{ nginx_user }}"
+
+    # - name: Generate an OpenSSL private key.
+    #   openssl_privatekey:
+    #     path: "{{ jenkins_ssl_privkey_path }}"
+    #     owner: "{{ nginx_user }}"
+    #     group: "{{ nginx_user }}"
+
+    # - name: Generate an OpenSSL CSR.
+    #   openssl_csr:
+    #     path: "{{ jenkins_ssl_csr_path }}"
+    #     privatekey_path: "{{ jenkins_ssl_privkey_path }}"
+    #     common_name: "{{ jenkins_domain_name }}"
+    #     owner: "{{ nginx_user }}"
+    #     group: "{{ nginx_user }}"
+
+    # - name: Generate a Self Signed OpenSSL certificate.
+    #   openssl_certificate:
+    #     path: "{{ jenkins_ssl_certificate_path }}"
+    #     privatekey_path: "{{ jenkins_ssl_privkey_path }}"
+    #     csr_path: "{{ jenkins_ssl_csr_path }}"
+    #     provider: selfsigned
+    #     owner: "{{ nginx_user }}"
+    #     group: "{{ nginx_user }}"
 
     - name: Template nginx/jenkins.conf.j2 to /etc/nginx/sites-enabled/
       template:
