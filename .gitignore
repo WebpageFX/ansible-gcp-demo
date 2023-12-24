@@ -2,3 +2,4 @@
 .env
 !ansible/files/beanstalk_to_github_migration/.env
 .DS_Store
+.vault_pass
