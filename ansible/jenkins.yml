@@ -158,6 +158,10 @@
               6362356662393264390a373362356531363263303132343031636562386262336461613762666538
               34616636376436326664313433343662643233666665396561343931633335386534376637663132
               6235343463333036366665356461616230613364356136316535
+    github_app_private_key_path: /workspace/ansible/secrets/github_app_private_key
+    github_private_key_path: secrets/github_private_key
+    previously_authorized_private_key_path: secrets/previously_authorized_private_key
+    ansible_vault_password_path: secrets/ansible_vault_password
   roles:
     - geerlingguy.java
     - geerlingguy.jenkins
@@ -203,6 +207,22 @@
     - name: Set github_app_key
       set_fact:
         github_app_key: "{{ github_app_key_raw | to_json }}"
+
+    - name: Slurp github_app_private_key_path
+      set_fact:
+        github_app_private_key: "{{ lookup('ansible.builtin.unvault', github_app_private_key_path) | string | trim | to_json  }}"
+
+    - name: Slurp github_private_key_path
+      set_fact:
+          github_private_key: "{{ lookup('ansible.builtin.unvault', github_private_key_path) | string | trim | to_json  }}"
+
+    - name: Slurp previously_authorized_private_key_path
+      set_fact:
+          previously_authorized_private_key: "{{ lookup('ansible.builtin.unvault', previously_authorized_private_key_path) | string | trim | to_json  }}"
+
+    - name: Slurp ansible_vault_password_path
+      set_fact:
+          ansible_vault_password: "{{ lookup('ansible.builtin.unvault', ansible_vault_password_path) | string | trim }}"
 
     # https://github.com/jenkinsci/configuration-as-code-plugin
     - name: Template jenkins.j2 to {{ jenkins_home }}/jenkins.yaml
