@@ -3,7 +3,7 @@ plugin: gcp_compute
 projects:
   - interactive-sandbox
 auth_kind: serviceaccount
-service_account_file: /home/ansible/gcp_service_account.json
+service_account_file: '/gcp_service_account.json'
 keyed_groups:
   - key: labels
     prefix: label

@@ -3,7 +3,7 @@
   hosts: localhost
   vars:
     ssh_user: ansible
-    ssh_key_path: /root/.ssh/id_rsa
+    ssh_key_path: secrets/id_rsa_gcp_ansible
     infrastructure_state: present
     instance_source_image: projects/ubuntu-os-cloud/global/images/ubuntu-2204-jammy-v20231030
     instance_status: RUNNING
@@ -41,14 +41,6 @@
           - google-auth
         state: present
       become: true
-
-    - name: Generate SSH key pair
-      openssh_keypair:
-        path: "{{ ssh_key_path }}"
-        type: rsa
-        comment: "ansible"
-        size: 2048
-      tags: ssh-keygen
 
     - name: Manage network
       google.cloud.gcp_compute_network:

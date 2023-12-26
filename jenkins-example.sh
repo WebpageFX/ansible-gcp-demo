@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-ANSIBLE_CONFIG=/workspace/ansible/ansible.cfg ansible-playbook -i ansible/inventory.gcp.yml --vault-password-file /workspace/.vault_pass -vv ansible/jenkins.yml
+ansible-vault view ansible/secrets/id_rsa_gcp_ansible | ssh-add - && ANSIBLE_CONFIG=ansible/ansible.cfg ansible-playbook -i ansible/inventories/development/inventory.gcp.yml -vv ansible/jenkins.yml
