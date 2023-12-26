@@ -214,15 +214,15 @@
 
     - name: Slurp github_private_key_path
       set_fact:
-          github_private_key: "{{ lookup('ansible.builtin.unvault', github_private_key_path) | string | trim | to_json  }}"
+        github_private_key: "{{ lookup('ansible.builtin.unvault', github_private_key_path) | string | trim | to_json  }}"
 
     - name: Slurp previously_authorized_private_key_path
       set_fact:
-          previously_authorized_private_key: "{{ lookup('ansible.builtin.unvault', previously_authorized_private_key_path) | string | trim | to_json  }}"
+        previously_authorized_private_key: "{{ lookup('ansible.builtin.unvault', previously_authorized_private_key_path) | string | trim | to_json  }}"
 
-    - name: Slurp ansible_vault_password_path
+    - name: Slurp ansible_vault_password_path and base64 encode it
       set_fact:
-          ansible_vault_password: "{{ lookup('ansible.builtin.unvault', ansible_vault_password_path) | string | trim }}"
+        ansible_vault_password: "{{ lookup('ansible.builtin.unvault', ansible_vault_password_path) | string | trim | b64encode }}"
 
     # https://github.com/jenkinsci/configuration-as-code-plugin
     - name: Template jenkins.j2 to {{ jenkins_home }}/jenkins.yaml

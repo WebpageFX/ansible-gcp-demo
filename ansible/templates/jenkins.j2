@@ -17,10 +17,33 @@ credentials:
             password: "{{ github_packages_classic_token }}"
         - basicSSHUserPrivateKey:
             scope: GLOBAL
+            id: "ssh-github-app-private-key"
+            username: "unknown_username"
+            passphrase: ""
+            description: "GitHub App Private Key"
+            privateKeySource:
+              directEntry:
+                privateKey: {{ github_app_private_key }}
+        - basicSSHUserPrivateKey:
+            scope: GLOBAL
+            id: "ssh-github-private-key"
+            username: "unknown_username"
+            passphrase: ""
+            description: "GitHub Private Key"
+            privateKeySource:
+              directEntry:
+                privateKey: {{ github_private_key }}
+        - basicSSHUserPrivateKey:
+            scope: GLOBAL
             id: "ssh-previously-authorized-private-key"
-            username: ""
+            username: "unknown_username"
             passphrase: ""
             description: "Previously Authorized Private Key File"
             privateKeySource:
               directEntry:
                 privateKey: {{ previously_authorized_private_key }}
+        - file:
+            scope: GLOBAL
+            id: "ansible-vault-password"
+            fileName: "ansible_vault_password"
+            secretBytes: "{{ ansible_vault_password }}" # secretBytes requires base64 encoded content
